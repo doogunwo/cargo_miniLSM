@@ -1,47 +1,50 @@
 package memtable
 
 import (
-    "fmt"
+    "crypto/md5"
+    "encoding/binary"
     "github.com/sean-public/fast-skiplist"
 )
-
+//스킵리스트 멤테이블
 type MemTable struct {
-    table *skiplist.SkilList
+    table *skiplist.SkipList
 }
-
-func NewMEmTable() *MemTable {
-    return &MemTable {
+//멤테이블 생성
+func NewMemTable() *MemTable {
+    return &MemTable{
         table: skiplist.New(),
     }
 }
+//스킵리스트는 float64 키 요구함
+func hashKey(key string) float64 {
+    hasher := md5.New()
+    hasher.Write([]byte(key))
+    hashBytes := hasher.Sum(nil)
+    return float64(binary.BigEndian.Uint64(hashBytes[:8]))
+}
 
+//키 삽입
 func (mt *MemTable) Put(key string, value string) {
-    mt.table.Set(key, value)
+    hashedKey := hashKey(key)
+    mt.table.Set(hashedKey, value)
 }
 
+//키 가져오기 조회임
 func (mt *MemTable) Get(key string) (string, bool) {
-    if entry, found := mt.table.Get(key); found {
-        return entry.(string), true
+    hashedKey := hashKey(key)
+    entry := mt.table.Get(hashedKey)
+    if entry != nil {
+        return entry.Value().(string), true
     }
-    return "",false
+    return "", false
 }
 
-func main() {
-    memTable := NewMemTable()
-
-    memTable.Put("key1", "value1")
-    memTable.Put("key2", "value2")
-
-    if value, found := memTable.Get("key1"); found {
-        fmt.Println("Found key1:", value)
-    } else {
-        fmt.Println("key1 not found")
-    }
-
-    if value, found := memTable.Get("key3"); found {
-        fmt.Println("Found key3:", value)
-    } else {
-        fmt.Println("key3 not found")
-    }
+//멤테이블 길이 재기
+func (mt *MemTable) Len() int {
+    return mt.table.Len()
 }
 
+//이터레이터 생성
+func (mt *MemTable) NewIterator() *skiplist.Iterator {
+    return mt.table.NewIterator()
+}
