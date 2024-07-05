@@ -4,6 +4,13 @@ import (
   "sync"
 )
 
+const maxThreshold  = 50
+
+//error control
+var (
+  
+)
+
 type MemTable struct {
     mu sync.RWMutex //뮤텍스
     table map[string][]byte // 테이블
@@ -14,7 +21,7 @@ func NewMemTable() *MemTable {
       table: make(map[string][]byte),
     }
 }
-// memtable에 키에 해당하는 값 반환
+// 메모리에 키 값 저장
 func (m *MemTable) Put(key string, value []byte) {
     m.mu.Lock()
     defer m.mu.Unlock()
